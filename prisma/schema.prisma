@@ -61,3 +61,19 @@ model Foto {
   url       String
   ordem     Int      @default(0)
 }
+
+model Auditoria {
+  id        String   @id @default(cuid())
+  usuarioId String?
+  acao      String
+  detalhe   String?
+  ip        String?
+  criadoEm DateTime @default(now())
+}
+
+model Acesso {
+  id        String   @id @default(cuid())
+  pagina    String
+  ip        String?
+  criadoEm DateTime @default(now())
+}
