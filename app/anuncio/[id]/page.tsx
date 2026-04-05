@@ -9,7 +9,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
   const anuncio = await prisma.anuncio.findUnique({
     where: { id },
     include: {
-      fotos: { orderBy: { ordem: "asc" } },
+      fotos: { orderBy: { id: "asc" } },
       usuario: { select: { nome: true, whatsapp: true, cidade: true, estado: true } },
     },
   })
