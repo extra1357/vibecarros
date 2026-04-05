@@ -17,3 +17,5 @@ corrigir-anunciar.sh
 /7
 /8
 /next
+.vercel
+.env*.local
