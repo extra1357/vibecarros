@@ -33,7 +33,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
               <div style={{ height: "300px", display: "flex", alignItems: "center", justifyContent: "center", color: "#333", fontSize: "3rem" }}>📷</div>
             ) : (
               <div style={{ display: "flex", overflowX: "auto", scrollSnapType: "x mandatory", gap: "8px", padding: "8px", scrollbarWidth: "none" }}>
-                {anuncio.fotos.map((f, i) => (
+                {anuncio.fotos.map((f: { id: string; url: string }, i: number) => (
                   <img key={f.id} src={f.url} alt={`Foto ${i + 1}`}
                     style={{ minWidth: "100%", maxHeight: "420px", objectFit: "cover", scrollSnapAlign: "start", borderRadius: "8px" }} />
                 ))}
