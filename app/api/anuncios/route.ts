@@ -1,51 +1,36 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getUsuarioLogado } from "@/lib/auth"
-import { LIMITES } from "@/lib/validacoes"
 import { put } from "@vercel/blob"
-
-const MAX_FOTO_BYTES = 2 * 1024 * 1024 // 2MB
 
 export async function POST(req: NextRequest) {
   try {
     const usuario = await getUsuarioLogado()
-    if (!usuario) {
-      return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
-    }
+    if (!usuario) return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
 
     const db = await prisma.usuario.findUnique({ where: { id: usuario.id }, select: { plano: true } })
     const { getLimitesPlano } = await import("@/lib/planos")
     const limites = getLimitesPlano(db?.plano ?? "free")
 
-    const totalAtivos = await prisma.anuncio.count({
-      where: { usuarioId: usuario.id, ativo: true },
-    })
-    if (totalAtivos >= limites.anuncios) {
-      return NextResponse.json({
-        error: `Limite de anúncios atingido. Faça upgrade do seu plano.`,
-        upgrade: true,
-      }, { status: 422 })
-    }
+    const totalAtivos = await prisma.anuncio.count({ where: { usuarioId: usuario.id, ativo: true } })
+    if (totalAtivos >= limites.anuncios)
+      return NextResponse.json({ error: "Limite de anúncios atingido. Faça upgrade do seu plano.", upgrade: true }, { status: 422 })
 
     const form = await req.formData()
     const veiculoRaw = form.get("veiculo") as string
     const veiculo = JSON.parse(veiculoRaw)
-
     const fotosEntries = form.getAll("fotos") as File[]
-    if (fotosEntries.length > limites.fotos) {
-      return NextResponse.json({
-        error: `Máximo de ${limites.fotos} fotos permitido.`,
-      }, { status: 400 })
-    }
+
+    if (fotosEntries.length > limites.fotos)
+      return NextResponse.json({ error: `Máximo de ${limites.fotos} fotos permitido.` }, { status: 400 })
 
     const urlsFotos: string[] = []
-
     for (const foto of fotosEntries) {
-      if (foto.size > MAX_FOTO_BYTES) {
-        return NextResponse.json({ error: `Foto "${foto.name}" ultrapassa 2MB.` }, { status: 400 })
-      }
-      const filename = `veiculos/${Date.now()}-${foto.name.replace(/[^a-z0-9.]/gi, "_")}`
-      const blob = await put(filename, foto, { access: "public" })
+      if (foto.size > 15 * 1024 * 1024)
+        return NextResponse.json({ error: `Foto "${foto.name}" ultrapassa 15MB.` }, { status: 400 })
+      const ext = foto.name.split(".").pop()?.toLowerCase() ?? "jpg"
+      const filename = `veiculos/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+      const blob = await put(filename, foto, { access: "public", contentType: foto.type || "image/jpeg" })
       urlsFotos.push(blob.url)
     }
 
@@ -72,9 +57,7 @@ export async function POST(req: NextRequest) {
         descricao: veiculo.descricao || null,
         ativo: true,
         destaque: false,
-        fotos: {
-          create: urlsFotos.map((url, ordem) => ({ url, ordem })),
-        },
+        fotos: { create: urlsFotos.map((url, ordem) => ({ url, ordem })) },
       },
       include: { fotos: true },
     })

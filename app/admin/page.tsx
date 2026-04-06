@@ -243,3 +243,4 @@ export default function AdminPage() {
 function btn(cor: string): React.CSSProperties {
   return { background: cor, border: "none", color: "#fff", borderRadius: 6, padding: "5px 10px", cursor: "pointer", fontSize: 12, fontWeight: "bold", whiteSpace: "nowrap" }
 }
+// patch aplicado via append - ignorar, o arquivo principal já tem tudo

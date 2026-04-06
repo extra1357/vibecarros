@@ -19,10 +19,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const files = form.getAll("fotos") as File[]
 
   for (const file of files) {
-    if (file.size > 2 * 1024 * 1024)
-      return NextResponse.json({ error: `Foto "${file.name}" ultrapassa 2MB.` }, { status: 400 })
-    const filename = `veiculos/${Date.now()}-${file.name.replace(/[^a-z0-9.]/gi, "_")}`
-    const blob = await put(filename, file, { access: "public" })
+    if (file.size > 15 * 1024 * 1024)
+      return NextResponse.json({ error: `Foto "${file.name}" ultrapassa 15MB.` }, { status: 400 })
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg"
+    const filename = `veiculos/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+    const blob = await put(filename, file, { access: "public", contentType: file.type || "image/jpeg" })
     await prisma.foto.create({ data: { anuncioId: id, url: blob.url, ordem: anuncio.fotos.length } })
   }
 
