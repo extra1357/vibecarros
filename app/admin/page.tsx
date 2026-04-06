@@ -1,9 +1,8 @@
 "use client"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 
 type Aba = "resumo" | "auditoria" | "usuarios" | "acessos" | "anuncios"
-
 interface Foto { id: string; url: string; ordem: number }
 interface Anuncio { id: string; marca: string; modelo: string; anoMod: number; preco: number; ativo: boolean; destaque: boolean; criadoEm: string; fotos: Foto[]; usuario: { nome: string; email: string; cidade: string; whatsapp: string } }
 interface Usuario { id: string; nome: string; email: string; cidade: string; estado: string; plano: string; ativo: boolean; criadoEm: string; whatsapp: string; tipDoc: string }
@@ -20,6 +19,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [msg, setMsg] = useState("")
   const [fotoExpandida, setFotoExpandida] = useState<string | null>(null)
+  const [uploadingId, setUploadingId] = useState<string | null>(null)
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
   async function carregar(a: Aba) {
     setLoading(true)
@@ -45,6 +46,18 @@ export default function AdminPage() {
     if (res.ok) { setMsg("✅ Ação realizada!"); carregar(aba) }
     else setMsg("❌ Erro ao executar ação.")
     setTimeout(() => setMsg(""), 3000)
+  }
+
+  async function adicionarFotos(anuncioId: string, files: FileList) {
+    setUploadingId(anuncioId)
+    setMsg("")
+    const form = new FormData()
+    Array.from(files).forEach(f => form.append("fotos", f))
+    const res = await fetch(`/api/anuncios/${anuncioId}/fotos`, { method: "POST", body: form, credentials: "include" })
+    if (res.ok) { setMsg("✅ Fotos adicionadas!"); carregar(aba) }
+    else { const d = await res.json(); setMsg(`❌ ${d.error ?? "Erro ao adicionar fotos."}`) }
+    setUploadingId(null)
+    setTimeout(() => setMsg(""), 4000)
   }
 
   const estiloAba = (a: Aba) => ({
@@ -79,19 +92,17 @@ export default function AdminPage() {
 
       {/* RESUMO */}
       {!loading && aba === "resumo" && resumo && (
-        <div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 32 }}>
-            {[
-              { label: "Usuários cadastrados", valor: resumo.totalUsuarios, cor: "#1E3A5F" },
-              { label: "Anúncios no ar", valor: resumo.totalAnuncios, cor: "#1A7A4A" },
-              { label: "Acessos hoje", valor: resumo.acessosHoje, cor: "#C0392B" },
-            ].map(card => (
-              <div key={card.label} style={{ background: "#f8f9fa", borderRadius: 12, padding: 24, borderLeft: `5px solid ${card.cor}` }}>
-                <div style={{ fontSize: 36, fontWeight: "bold", color: card.cor }}>{card.valor}</div>
-                <div style={{ color: "#666", marginTop: 4 }}>{card.label}</div>
-              </div>
-            ))}
-          </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+          {[
+            { label: "Usuários cadastrados", valor: resumo.totalUsuarios, cor: "#1E3A5F" },
+            { label: "Anúncios no ar", valor: resumo.totalAnuncios, cor: "#1A7A4A" },
+            { label: "Acessos hoje", valor: resumo.acessosHoje, cor: "#C0392B" },
+          ].map(card => (
+            <div key={card.label} style={{ background: "#f8f9fa", borderRadius: 12, padding: 24, borderLeft: `5px solid ${card.cor}` }}>
+              <div style={{ fontSize: 36, fontWeight: "bold", color: card.cor }}>{card.valor}</div>
+              <div style={{ color: "#666", marginTop: 4 }}>{card.label}</div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -103,16 +114,28 @@ export default function AdminPage() {
             {anuncios.map(a => (
               <div key={a.id} style={{ background: "#f8f9fa", borderRadius: 12, padding: 16, border: "1px solid #e0e0e0" }}>
                 <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+
                   {/* FOTOS */}
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-start" }}>
                     {a.fotos.map(f => (
                       <div key={f.id} style={{ position: "relative" }}>
-                        <img src={f.url} onClick={() => setFotoExpandida(f.url)} style={{ width: 90, height: 70, objectFit: "cover", borderRadius: 6, cursor: "pointer", border: "1px solid #ddd" }} />
+                        <img src={f.url} onClick={() => setFotoExpandida(f.url)}
+                          style={{ width: 90, height: 70, objectFit: "cover", borderRadius: 6, cursor: "pointer", border: "1px solid #ddd" }} />
                         <button onClick={() => { if (confirm("Remover esta foto?")) acao("anuncio", a.id, "deletarFoto", f.id) }}
                           style={{ position: "absolute", top: 2, right: 2, background: "rgba(200,0,0,0.8)", border: "none", color: "#fff", borderRadius: "50%", width: 20, height: 20, cursor: "pointer", fontSize: 11, fontWeight: "bold" }}>✕</button>
                       </div>
                     ))}
-                    {a.fotos.length === 0 && <div style={{ width: 90, height: 70, background: "#ddd", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", color: "#999", fontSize: 11 }}>sem foto</div>}
+
+                    {/* BOTÃO ADICIONAR FOTO */}
+                    <div onClick={() => inputRefs.current[a.id]?.click()}
+                      style={{ width: 90, height: 70, border: "2px dashed #bbb", borderRadius: 6, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: uploadingId === a.id ? "wait" : "pointer", background: "#fff", gap: 2 }}>
+                      {uploadingId === a.id
+                        ? <span style={{ fontSize: 11, color: "#888" }}>Enviando...</span>
+                        : <><span style={{ fontSize: 22, color: "#aaa" }}>+</span><span style={{ fontSize: 10, color: "#aaa" }}>add foto</span></>
+                      }
+                      <input ref={el => { inputRefs.current[a.id] = el }} type="file" accept="image/*" multiple style={{ display: "none" }}
+                        onChange={e => e.target.files && adicionarFotos(a.id, e.target.files)} />
+                    </div>
                   </div>
 
                   {/* INFO */}
@@ -243,4 +266,3 @@ export default function AdminPage() {
 function btn(cor: string): React.CSSProperties {
   return { background: cor, border: "none", color: "#fff", borderRadius: 6, padding: "5px 10px", cursor: "pointer", fontSize: 12, fontWeight: "bold", whiteSpace: "nowrap" }
 }
-// patch aplicado via append - ignorar, o arquivo principal já tem tudo
