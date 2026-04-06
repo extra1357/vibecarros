@@ -109,6 +109,7 @@ export default function PainelPage() {
                 ) : (
                   <button style={s.btnAcao} onClick={() => acao(a.id, "ativar")}>▶️ Ativar</button>
                 )}
+                <button style={s.btnAcao} onClick={() => router.push(`/painel/editar/${a.id}`)}>✏️ Editar Fotos</button>
                 <button style={{ ...s.btnAcao, color: "#ff5555" }}
                   onClick={() => { if (confirm("Excluir este anúncio?")) acao(a.id, "deletar") }}>
                   🗑 Excluir
