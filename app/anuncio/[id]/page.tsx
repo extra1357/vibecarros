@@ -35,7 +35,7 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
               <div style={{ display: "flex", overflowX: "auto", scrollSnapType: "x mandatory", gap: "8px", padding: "8px", scrollbarWidth: "none" }}>
                 {anuncio.fotos.map((f: { id: string; url: string }, i: number) => (
                   <img key={f.id} src={f.url} alt={`Foto ${i + 1}`}
-                    style={{ minWidth: "100%", maxHeight: "420px", objectFit: "cover", scrollSnapAlign: "start", borderRadius: "8px" }} />
+                    style={{ minWidth: "100%", maxHeight: "420px", objectFit: "contain", scrollSnapAlign: "start", borderRadius: "8px", background: "#111" }} />
                 ))}
               </div>
             )}
