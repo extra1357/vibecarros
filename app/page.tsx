@@ -4,7 +4,7 @@ import SearchPanel from "./components/SearchPanel"
 import Listings from "./components/Listings"
 import Footer from "./components/Footer"
 
-export const revalidate = 0 // sempre busca do banco, sem cache
+export const revalidate = 0
 
 async function getAnuncios() {
   try {
@@ -24,12 +24,21 @@ async function getAnuncios() {
   }
 }
 
+async function getTotalAcessos() {
+  try {
+    const { prisma } = await import("@/lib/prisma")
+    return await prisma.acesso.count()
+  } catch {
+    return 0
+  }
+}
+
 export default async function Home() {
-  const anuncios = await getAnuncios()
+  const [anuncios, totalAcessos] = await Promise.all([getAnuncios(), getTotalAcessos()])
   return (
     <>
       <Navbar />
-      <Hero />
+      <Hero totalAcessos={totalAcessos} />
       <SearchPanel />
       <Listings anuncios={anuncios} />
       <Footer />
