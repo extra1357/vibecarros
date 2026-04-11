@@ -9,12 +9,38 @@ const CIDADES_BLOG = [
   { slug: "porto-feliz", nome: "Porto Feliz" },
 ]
 
+const LINKS_RAPIDOS = [
+  { href: "/", label: "Início" },
+  { href: "/anunciar", label: "Anunciar Veículo" },
+  { href: "/planos", label: "Planos e Preços" },
+  { href: "/login", label: "Entrar" },
+  { href: "/registro", label: "Cadastrar" },
+]
+
 export default function Footer() {
   return (
     <footer style={{ background: "#0f2240", color: "#cdd9e8", fontSize: 14, marginTop: 64 }}>
+      <style>{`
+        @keyframes pulso {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+        .termos-link {
+          animation: pulso 2.5s ease-in-out infinite;
+          color: #f5c518 !important;
+          font-weight: 700;
+          text-decoration: none;
+          font-size: 14px;
+        }
+        .termos-link:hover {
+          animation: none;
+          opacity: 1 !important;
+          color: #fff !important;
+        }
+      `}</style>
+
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "48px 20px 24px", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 32 }}>
 
-        {/* MARCA */}
         <div>
           <div style={{ fontWeight: 800, fontSize: 20, color: "#fff", marginBottom: 10 }}>🚗 VibeCarros</div>
           <p style={{ lineHeight: 1.7, color: "#8fa8c0", fontSize: 13, margin: 0 }}>
@@ -22,7 +48,6 @@ export default function Footer() {
           </p>
         </div>
 
-        {/* GUIAS POR CIDADE */}
         <div>
           <div style={{ fontWeight: 700, color: "#fff", marginBottom: 12, fontSize: 13, textTransform: "uppercase", letterSpacing: 1 }}>
             Guias por Cidade
@@ -49,19 +74,12 @@ export default function Footer() {
           </ul>
         </div>
 
-        {/* LINKS RÁPIDOS */}
         <div>
           <div style={{ fontWeight: 700, color: "#fff", marginBottom: 12, fontSize: 13, textTransform: "uppercase", letterSpacing: 1 }}>
             Links Rápidos
           </div>
           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
-            {[
-              { href: "/", label: "Início" },
-              { href: "/anunciar", label: "Anunciar Veículo" },
-              { href: "/planos", label: "Planos e Preços" },
-              { href: "/login", label: "Entrar" },
-              { href: "/registro", label: "Cadastrar" },
-            ].map(({ href, label }) => (
+            {LINKS_RAPIDOS.map(({ href, label }) => (
               <li key={href}>
                 <Link href={href}
                   style={{ color: "#8fa8c0", textDecoration: "none", fontSize: 14 }}
@@ -71,10 +89,14 @@ export default function Footer() {
                 </Link>
               </li>
             ))}
+            <li>
+              <Link href="/termos" className="termos-link">
+                📋 Termos de Uso
+              </Link>
+            </li>
           </ul>
         </div>
 
-        {/* AVISO LEGAL */}
         <div>
           <div style={{ fontWeight: 700, color: "#fff", marginBottom: 12, fontSize: 13, textTransform: "uppercase", letterSpacing: 1 }}>
             Aviso Legal
@@ -86,14 +108,13 @@ export default function Footer() {
 
       </div>
 
-      {/* BOTTOM BAR */}
       <div style={{ borderTop: "1px solid #1e3a5f", padding: "16px 20px", maxWidth: 1100, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
         <span style={{ color: "#8fa8c0", fontSize: 12 }}>
           © {new Date().getFullYear()} VibeCarros · Itu, Salto, Indaiatuba, Sorocaba e Porto Feliz · SP
         </span>
-        <span style={{ color: "#8fa8c0", fontSize: 12 }}>
-          Feito com 🚗 no interior paulista
-        </span>
+        <Link href="/termos" className="termos-link" style={{ fontSize: 11 }}>
+          Termos de Uso · Cotawebseguros Ltda · CNPJ 23.659.612/0001-96
+        </Link>
       </div>
     </footer>
   )
