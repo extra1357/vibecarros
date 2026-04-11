@@ -37,7 +37,6 @@ export async function POST(req: NextRequest) {
     success_url: `${appUrl}/painel?sucesso=1`,
     cancel_url: `${appUrl}/planos`,
     metadata: { usuarioId: db.id, planoId },
-    consent_collection: { terms_of_service: "required" },
   })
 
   return NextResponse.json({ url: session.url })
