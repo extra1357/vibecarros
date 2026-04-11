@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const anuncio = await prisma.anuncio.findUnique({
-    where: { id: params.id, ativo: true },
+    where: { id, ativo: true },
     include: { usuario: { select: { whatsapp: true } } },
   })
   if (!anuncio) return NextResponse.json({ error: "Não encontrado." }, { status: 404 })
