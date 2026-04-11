@@ -10,15 +10,13 @@ export default async function AnuncioPage({ params }: { params: Promise<{ id: st
     where: { id },
     include: {
       fotos: { orderBy: { id: "asc" } },
-      usuario: { select: { nome: true, whatsapp: true, cidade: true, estado: true } },
+      usuario: { select: { nome: true, cidade: true, estado: true } },
     },
   })
   if (!anuncio) notFound()
 
   const titulo = `${anuncio.marca} ${anuncio.modelo}${anuncio.versao ? " " + anuncio.versao : ""} ${anuncio.anoMod}`
-  const whatsapp = anuncio.usuario.whatsapp.replace(/\D/g, "")
-  const msg = encodeURIComponent(`Olá! Tenho interesse no ${titulo} anunciado no VibeCarros.`)
-  const waUrl = `https://wa.me/55${whatsapp}?text=${msg}`
+  const waUrl = `/api/wpp/${anuncio.id}`
 
   return (
     <>
