@@ -67,6 +67,7 @@ export async function PATCH(req: NextRequest) {
       if (acao === "destaque") await prisma.anuncio.update({ where: { id }, data: { destaque: valor } })
       if (acao === "deletar") await prisma.anuncio.delete({ where: { id } })
       if (acao === "deletarFoto") await prisma.foto.delete({ where: { id: valor } })
+      if (acao === "vendido") await prisma.anuncio.update({ where: { id }, data: { vendidoEm: new Date(), ativo: false } })
     }
 
     if (tipo === "usuario") {

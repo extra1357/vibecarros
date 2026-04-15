@@ -45,5 +45,10 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
+  if (acao === "vendido") {
+    await prisma.anuncio.update({ where: { id }, data: { vendidoEm: new Date(), ativo: false } })
+    return NextResponse.json({ ok: true })
+  }
+
   return NextResponse.json({ error: "Ação inválida." }, { status: 400 })
 }

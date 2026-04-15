@@ -79,11 +79,12 @@ async function getVeiculos(nomeCidade: string) {
   try {
     return await prisma.anuncio.findMany({
       where: {
-        ativo: true,
+        OR: [{ ativo: true }, { vendidoEm: { gte: new Date(Date.now() - 7*24*60*60*1000) } }],
         usuario: { cidade: { equals: nomeCidade, mode: "insensitive" } },
       },
       include: {
         fotos: { orderBy: { id: "asc" }, take: 1 },
+        vendidoEm: true,
         usuario: { select: { nome: true, whatsapp: true, cidade: true } },
       },
       orderBy: [{ destaque: "desc" }, { criadoEm: "desc" }],
@@ -198,6 +199,7 @@ export default async function BlogCidade(
                   preco={Number(v.preco)}
                   fotoUrl={v.fotos[0]?.url ?? null}
                   nomeCidade={c.nome}
+                  vendidoEm={v.vendidoEm ?? null}
                 />
               ))}
             </div>

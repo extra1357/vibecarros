@@ -50,6 +50,7 @@ model Anuncio {
   descricao     String?
   destaque      Boolean   @default(false)
   ativo         Boolean   @default(true)
+  vendidoEm     DateTime?
   criadoEm      DateTime  @default(now())
   fotos         Foto[]
 }

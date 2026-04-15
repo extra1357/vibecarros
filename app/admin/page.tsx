@@ -161,6 +161,7 @@ export default function AdminPage() {
                       ? <button style={btn("#888")} onClick={() => acao("anuncio", a.id, "destaque", false)}>★ Remover destaque</button>
                       : <button style={btn("#f5a623")} onClick={() => acao("anuncio", a.id, "destaque", true)}>⭐ Destacar</button>
                     }
+                    <button style={btn("#f59e0b")} onClick={() => { if (confirm("Marcar como VENDIDO? Ficará visível por 7 dias.")) acao("anuncio", a.id, "vendido") }}>🏷️ Vendido</button>
                     <button style={btn("#c0392b")} onClick={() => { if (confirm("Deletar anúncio permanentemente?")) acao("anuncio", a.id, "deletar") }}>🗑 Deletar</button>
                   </div>
                 </div>

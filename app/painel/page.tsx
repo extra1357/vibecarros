@@ -7,7 +7,7 @@ const LIMITES = { CPF: { anuncios: 2, fotos: 4 }, CNPJ: { anuncios: 6, fotos: 6 
 
 interface Anuncio {
   id: string; marca: string; modelo: string; anoMod: number; preco: number
-  ativo: boolean; criadoEm: string; fotos: { url: string }[]
+  ativo: boolean; criadoEm: string; vendidoEm: string | null; fotos: { url: string }[]
 }
 
 export default function PainelPage() {
@@ -28,6 +28,7 @@ export default function PainelPage() {
   useEffect(() => { carregar() }, [])
 
   async function acao(id: string, a: string) {
+    if (a === "vendido" && !confirm("Marcar como VENDIDO? O anuncio ficara visivel por 7 dias e depois sera removido.")) return
     await fetch("/api/painel/anuncios", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -46,6 +47,15 @@ export default function PainelPage() {
   const ativos = anuncios.filter(a => a.ativo).length
   const limiteAtingido = ativos >= limite.anuncios
 
+  function statusAnuncio(a: Anuncio) {
+    if (a.vendidoEm) {
+      const dias = Math.floor((Date.now() - new Date(a.vendidoEm).getTime()) / 86400000)
+      return { label: "🏷️ Vendido (some em " + (7 - dias) + "d)", cor: "#f59e0b" }
+    }
+    if (a.ativo) return { label: "✅ Ativo", cor: "#22c55e" }
+    return { label: "⏸️ Pausado", cor: "#888" }
+  }
+
   if (loading) return <main style={s.main}><p style={{ color: "#888", textAlign: "center" }}>Carregando...</p></main>
 
   return (
@@ -55,14 +65,14 @@ export default function PainelPage() {
           <div>
             <h1 style={s.titulo}>Meu Painel</h1>
             <p style={s.sub}>
-              {ativos}/{limite.anuncios} anúncios ativos · {tipoDoc === "CNPJ" ? "🏢 Loja/PJ" : "👤 Pessoa Física"}
+              {ativos}/{limite.anuncios} anuncios ativos · {tipoDoc === "CNPJ" ? "🏢 Loja/PJ" : "👤 Pessoa Fisica"}
             </p>
           </div>
           <div style={{ display: "flex", gap: "0.75rem" }}>
             {limiteAtingido ? (
               <div style={s.btnBloqueado}>Limite atingido</div>
             ) : (
-              <Link href="/anunciar" style={s.btnNovo}>+ Novo Anúncio</Link>
+              <Link href="/anunciar" style={s.btnNovo}>+ Novo Anuncio</Link>
             )}
             <button onClick={logout} style={s.btnLogout}>Sair</button>
           </div>
@@ -70,53 +80,66 @@ export default function PainelPage() {
 
         <div style={s.barraWrapper}>
           <div style={s.barraFundo}>
-            <div style={{ ...s.barraCheia, width: `${(ativos / limite.anuncios) * 100}%` }} />
+            <div style={{ ...s.barraCheia, width: (ativos / limite.anuncios * 100) + "%" }} />
           </div>
           <span style={s.barraLabel}>{ativos} de {limite.anuncios} slots usados</span>
         </div>
 
         {anuncios.length === 0 && (
           <div style={s.vazio}>
-            <p>Você ainda não tem anúncios.</p>
-            <Link href="/anunciar" style={s.btnNovo}>Criar primeiro anúncio</Link>
+            <p>Voce ainda nao tem anuncios.</p>
+            <Link href="/anunciar" style={s.btnNovo}>Criar primeiro anuncio</Link>
           </div>
         )}
 
         <div style={s.lista}>
-          {anuncios.map(a => (
-            <div key={a.id} style={s.card}>
-              <div style={s.cardImg}>
-                {a.fotos[0]
-                  ? <img src={a.fotos[0].url} alt={a.modelo} style={s.img} />
-                  : <div style={s.semFoto}>📷</div>
-                }
-              </div>
-              <div style={s.cardInfo}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
-                  <h3 style={s.cardTitulo}>{a.marca} {a.modelo} {a.anoMod}</h3>
-                  <span style={{ ...s.badge, color: a.ativo ? "#22c55e" : "#888" }}>
-                    {a.ativo ? "✅ Ativo" : "⏸️ Pausado"}
-                  </span>
+          {anuncios.map(a => {
+            const status = statusAnuncio(a)
+            const jaVendido = !!a.vendidoEm
+            return (
+              <div key={a.id} style={s.card}>
+                <div style={{ ...s.cardImg, position: "relative" }}>
+                  {a.fotos[0]
+                    ? <img src={a.fotos[0].url} alt={a.modelo} style={s.img} />
+                    : <div style={s.semFoto}>📷</div>
+                  }
+                  {jaVendido && (
+                    <div style={s.faixaVendido}>
+                      <span style={s.faixaTexto}>VENDIDO</span>
+                    </div>
+                  )}
                 </div>
-                <p style={s.preco}>R$ {Number(a.preco).toLocaleString("pt-BR")}</p>
-                <p style={s.expira}>
-                  Publicado em: {new Date(a.criadoEm).toLocaleDateString("pt-BR")}
-                </p>
+                <div style={s.cardInfo}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+                    <h3 style={s.cardTitulo}>{a.marca} {a.modelo} {a.anoMod}</h3>
+                    <span style={{ ...s.badge, color: status.cor }}>{status.label}</span>
+                  </div>
+                  <p style={s.preco}>R$ {Number(a.preco).toLocaleString("pt-BR")}</p>
+                  <p style={s.expira}>Publicado em: {new Date(a.criadoEm).toLocaleDateString("pt-BR")}</p>
+                </div>
+                <div style={s.cardAcoes}>
+                  {!jaVendido && (
+                    <>
+                      {a.ativo ? (
+                        <button style={s.btnAcao} onClick={() => acao(a.id, "inativar")}>⏸ Pausar</button>
+                      ) : (
+                        <button style={s.btnAcao} onClick={() => acao(a.id, "ativar")}>▶️ Ativar</button>
+                      )}
+                      <button style={{ ...s.btnAcao, color: "#f59e0b", borderColor: "#f59e0b" }}
+                        onClick={() => acao(a.id, "vendido")}>
+                        🏷️ Marcar Vendido
+                      </button>
+                      <button style={s.btnAcao} onClick={() => router.push("/painel/editar/" + a.id)}>✏️ Editar Fotos</button>
+                    </>
+                  )}
+                  <button style={{ ...s.btnAcao, color: "#ff5555" }}
+                    onClick={() => { if (confirm("Excluir este anuncio?")) acao(a.id, "deletar") }}>
+                    🗑 Excluir
+                  </button>
+                </div>
               </div>
-              <div style={s.cardAcoes}>
-                {a.ativo ? (
-                  <button style={s.btnAcao} onClick={() => acao(a.id, "inativar")}>⏸ Pausar</button>
-                ) : (
-                  <button style={s.btnAcao} onClick={() => acao(a.id, "ativar")}>▶️ Ativar</button>
-                )}
-                <button style={s.btnAcao} onClick={() => router.push(`/painel/editar/${a.id}`)}>✏️ Editar Fotos</button>
-                <button style={{ ...s.btnAcao, color: "#ff5555" }}
-                  onClick={() => { if (confirm("Excluir este anúncio?")) acao(a.id, "deletar") }}>
-                  🗑 Excluir
-                </button>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </main>
@@ -149,4 +172,6 @@ const s: Record<string, React.CSSProperties> = {
   expira: { color: "#555", fontSize: "0.78rem", margin: 0 },
   cardAcoes: { display: "flex", flexDirection: "column", gap: "6px", padding: "1rem", justifyContent: "center" },
   btnAcao: { background: "transparent", border: "1px solid #333", borderRadius: "6px", color: "#ccc", padding: "6px 12px", cursor: "pointer", fontSize: "0.82rem", textAlign: "left", whiteSpace: "nowrap" },
+  faixaVendido: { position: "absolute", top: 18, left: -28, width: "120px", background: "#ef4444", transform: "rotate(-45deg)", textAlign: "center", padding: "3px 0", zIndex: 2 },
+  faixaTexto: { color: "#fff", fontSize: "0.65rem", fontWeight: 800, letterSpacing: "0.05em" },
 }
